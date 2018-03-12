@@ -1,13 +1,5 @@
 package sqlite3
 
-/*
-#ifndef USE_LIBSQLITE3
-#include <sqlite3-binding.h>
-#else
-#include <sqlite3.h>
-#endif
-*/
-import "C"
 import (
 	"reflect"
 	"time"
@@ -15,7 +7,7 @@ import (
 
 // ColumnTypeDatabaseTypeName implement RowsColumnTypeDatabaseTypeName.
 func (rc *SQLiteRows) ColumnTypeDatabaseTypeName(i int) string {
-	return C.GoString(C.sqlite3_column_decltype(rc.s.s, C.int(i)))
+	return sqlite3_column_decltype(*rc.s.s, i)
 }
 
 /*
@@ -35,22 +27,22 @@ func (rc *SQLiteRows) ColumnTypeNullable(i int) (nullable, ok bool) {
 
 // ColumnTypeScanType implement RowsColumnTypeScanType.
 func (rc *SQLiteRows) ColumnTypeScanType(i int) reflect.Type {
-	switch C.sqlite3_column_type(rc.s.s, C.int(i)) {
-	case C.SQLITE_INTEGER:
-		switch C.GoString(C.sqlite3_column_decltype(rc.s.s, C.int(i))) {
+	switch sqlite3_column_type(*rc.s.s, i) {
+	case SQLITE_INTEGER:
+		switch sqlite3_column_decltype(*rc.s.s, i) {
 		case "timestamp", "datetime", "date":
 			return reflect.TypeOf(time.Time{})
 		case "boolean":
 			return reflect.TypeOf(false)
 		}
 		return reflect.TypeOf(int64(0))
-	case C.SQLITE_FLOAT:
+	case SQLITE_FLOAT:
 		return reflect.TypeOf(float64(0))
-	case C.SQLITE_BLOB:
+	case SQLITE_BLOB:
 		return reflect.SliceOf(reflect.TypeOf(byte(0)))
-	case C.SQLITE_NULL:
+	case SQLITE_NULL:
 		return reflect.TypeOf(nil)
-	case C.SQLITE_TEXT:
+	case SQLITE_TEXT:
 		return reflect.TypeOf("")
 	}
 	return reflect.SliceOf(reflect.TypeOf(byte(0)))

@@ -5,13 +5,11 @@
 
 package sqlite3
 
-import "C"
-
 // ErrNo inherit errno.
 type ErrNo int
 
 // ErrNoMask is mask code.
-const ErrNoMask C.int = 0xff
+const ErrNoMask int = 0xff
 
 // ErrNoExtended is extended errno.
 type ErrNoExtended int
@@ -68,7 +66,7 @@ func (err ErrNo) Extend(by int) ErrNoExtended {
 
 // Error return error message that is extended code.
 func (err ErrNoExtended) Error() string {
-	return Error{Code: ErrNo(C.int(err) & ErrNoMask), ExtendedCode: err}.Error()
+	return Error{Code: ErrNo(int(err) & ErrNoMask), ExtendedCode: err}.Error()
 }
 
 func (err Error) Error() string {

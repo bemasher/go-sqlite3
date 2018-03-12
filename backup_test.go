@@ -278,6 +278,7 @@ func TestBackupError(t *testing.T) {
 	// Intentionally using the same connection for both the source and destination databases, to trigger an error result.
 	backup, err := dbDriverConn.Backup("main", dbDriverConn, "main")
 	if err == nil {
+		t.Fatal(err)
 		t.Fatal("Failed to get the expected error result.")
 	}
 	const expectedError = "source and destination must be distinct"
