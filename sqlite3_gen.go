@@ -168,7 +168,20 @@ func sqlite3_prepare_v2(db sqlite3, sql string, n int, s *sqlite3_stmt, tail *st
 //sys sqlite3_bind_parameter_count(stmt sqlite3_stmt) (ret int) = sqlite3.sqlite3_bind_parameter_count
 
 //sys sqlite3_reset(stmt sqlite3_stmt) (ret int) = sqlite3.sqlite3_reset
-//sys sqlite3_bind_parameter_index(stmt sqlite3_stmt, name string) (ret int, err error) = sqlite3.sqlite3_bind_parameter_index
+// //sys sqlite3_bind_parameter_index(stmt sqlite3_stmt, name string) (ret int, err error) = sqlite3.sqlite3_bind_parameter_index
+//sys zsqlite3_bind_parameter_index() = sqlite3.sqlite3_bind_parameter_index
+func sqlite3_bind_parameter_index(stmt sqlite3_stmt, name string) (ret int, err error) {
+	var _p0 *byte
+	_p0, err = syscall.BytePtrFromString(name)
+	if err != nil {
+		return
+	}
+
+	var r0 uintptr
+	r0, _, err = procsqlite3_bind_parameter_index.Call(uintptr(stmt), uintptr(unsafe.Pointer(_p0)))
+	ret = int(r0)
+	return
+}
 
 //sys sqlite3_bind_null(stmt sqlite3_stmt, ordinal int) (ret int) = sqlite3.sqlite3_bind_null
 
@@ -206,7 +219,15 @@ func sqlite3_bind_text(stmt sqlite3_stmt, ordinal int, text string) (ret int) {
 	return int(r0)
 }
 
-//sys sqlite3_bind_double(stmt sqlite3_stmt, ordinal int, val float64) (ret int) = sqlite3.sqlite3_bind_double
+//sys sqlite3_bind_value(stmt sqlite3_stmt, ordinal int, val uintptr) (ret int) = sqlite3.sqlite3_bind_value
+
+//sys zsqlite3_bind_double() = sqlite3.sqlite3_bind_double
+func sqlite3_bind_double(stmt sqlite3_stmt, ordinal int, val float64) (ret int) {
+	r0, _, _ := procsqlite3_bind_double.Call(uintptr(stmt), uintptr(ordinal), *(*uintptr)(unsafe.Pointer(&val)))
+	ret = int(r0)
+	return
+}
+
 //sys sqlite3_bind_int(stmt sqlite3_stmt, ordinal int, val int) (ret int) = sqlite3.sqlite3_bind_int
 //sys sqlite3_bind_int64(stmt sqlite3_stmt, ordinal int, val int64) (ret int) = sqlite3.sqlite3_bind_int64
 
@@ -217,21 +238,16 @@ func sqlite3_bind_text(stmt sqlite3_stmt, ordinal int, text string) (ret int) {
 //sys sqlite3_clear_bindings(stmt sqlite3_stmt) (ret int) = sqlite3.sqlite3_clear_bindings
 
 //sys sqlite3_step(stmt sqlite3_stmt) (ret int) = sqlite3.sqlite3_step
-//sys sqlite3_db_handle(stmt sqlite3_stmt) (db *sqlite3) = sqlite3.sqlite3_db_handle
+
+// //sys sqlite3_db_handle(stmt sqlite3_stmt) (db *sqlite3) = sqlite3.sqlite3_db_handle
+//sys zsqlite3_db_handle() = sqlite3.sqlite3_db_handle
+func sqlite3_db_handle(stmt sqlite3_stmt) (db *sqlite3) {
+	r0, _, _ := procsqlite3_db_handle.Call(uintptr(stmt))
+	return (*sqlite3)(unsafe.Pointer(&r0))
+}
 
 //sys sqlite3_last_insert_rowid(db sqlite3) (rowid int64) = sqlite3.sqlite3_last_insert_rowid
 //sys sqlite3_changes(db sqlite3) (changes int64) = sqlite3.sqlite3_changes
-
-func _sqlite3_step(stmt sqlite3_stmt, rowid, changes *int64) (ret int) {
-	rv := sqlite3_step(stmt)
-	db := sqlite3_db_handle(stmt)
-	if db == nil {
-		return SQLITE_ERROR
-	}
-	*rowid = sqlite3_last_insert_rowid(*db)
-	*changes = sqlite3_changes(*db)
-	return rv
-}
 
 //sys sqlite3_column_name(stmt sqlite3_stmt, idx int) (name dllString) = sqlite3.sqlite3_column_name
 //sys sqlite3_column_decltype(stmt sqlite3_stmt, idx int) (name dllString) = sqlite3.sqlite3_column_decltype
@@ -247,12 +263,18 @@ func sqlite3_column_blob(stmt sqlite3_stmt, idx int) uintptr {
 	return uintptr(bytePtr)
 }
 
+//sys sqlite3_value_dup(unprot_val uintptr) (prot_val uintptr) = sqlite3.sqlite3_value_dup
+
 // //sys sqlite3_column_double(stmt sqlite3_stmt, idx int) (ret float64) = sqlite3.sqlite3_column_double
+//sys zsqlite3_column_double() = sqlite3.sqlite3_column_double
 func sqlite3_column_double(stmt sqlite3_stmt, idx int) float64 {
-	ptr, _, _ := procsqlite3_column_value.Call(
+	unprot_val, _, _ := procsqlite3_column_value.Call(
 		uintptr(unsafe.Pointer(stmt)),
 		uintptr(idx),
 	)
+
+	ptr, _, _ := procsqlite3_value_dup.Call(unprot_val)
+
 	return *(*float64)(unsafe.Pointer(ptr))
 }
 

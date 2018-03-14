@@ -64,6 +64,7 @@ var (
 	procsqlite3_bind_null            = modsqlite3.NewProc("sqlite3_bind_null")
 	procsqlite3_bind_blob            = modsqlite3.NewProc("sqlite3_bind_blob")
 	procsqlite3_bind_text            = modsqlite3.NewProc("sqlite3_bind_text")
+	procsqlite3_bind_value           = modsqlite3.NewProc("sqlite3_bind_value")
 	procsqlite3_bind_double          = modsqlite3.NewProc("sqlite3_bind_double")
 	procsqlite3_bind_int             = modsqlite3.NewProc("sqlite3_bind_int")
 	procsqlite3_bind_int64           = modsqlite3.NewProc("sqlite3_bind_int64")
@@ -78,6 +79,8 @@ var (
 	procsqlite3_column_decltype      = modsqlite3.NewProc("sqlite3_column_decltype")
 	procsqlite3_column_bytes         = modsqlite3.NewProc("sqlite3_column_bytes")
 	procsqlite3_column_blob          = modsqlite3.NewProc("sqlite3_column_blob")
+	procsqlite3_value_dup            = modsqlite3.NewProc("sqlite3_value_dup")
+	procsqlite3_column_double        = modsqlite3.NewProc("sqlite3_column_double")
 	procsqlite3_column_int64         = modsqlite3.NewProc("sqlite3_column_int64")
 	procsqlite3_column_text          = modsqlite3.NewProc("sqlite3_column_text")
 	procsqlite3_column_type          = modsqlite3.NewProc("sqlite3_column_type")
@@ -85,278 +88,276 @@ var (
 )
 
 func sqlite3_libversion() (version string) {
-	r0, _, _ := syscall.Syscall(procsqlite3_libversion.Addr(), 0, 0, 0, 0)
+	r0, _, _ := procsqlite3_libversion.Call()
 	version = UintptrToString(r0)
 	return
 }
 
 func sqlite3_libversion_number() (version int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_libversion_number.Addr(), 0, 0, 0, 0)
+	r0, _, _ := procsqlite3_libversion_number.Call()
 	version = int(r0)
 	return
 }
 
 func sqlite3_sourceid() (sourceidPtr string) {
-	r0, _, _ := syscall.Syscall(procsqlite3_sourceid.Addr(), 0, 0, 0, 0)
+	r0, _, _ := procsqlite3_sourceid.Call()
 	sourceidPtr = UintptrToString(r0)
 	return
 }
 
 func sqlite3_threadsafe() (isThreadSafe bool) {
-	r0, _, _ := syscall.Syscall(procsqlite3_threadsafe.Addr(), 0, 0, 0, 0)
+	r0, _, _ := procsqlite3_threadsafe.Call()
 	isThreadSafe = r0 != 0
 	return
 }
 
 func sqlite3_busy_timeout(db sqlite3, ms int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_busy_timeout.Addr(), 2, uintptr(db), uintptr(ms), 0)
+	r0, _, _ := procsqlite3_busy_timeout.Call(uintptr(db), uintptr(ms))
 	ret = int(r0)
 	return
 }
 
 func zsqlite3_exec() {
-	syscall.Syscall(procsqlite3_exec.Addr(), 0, 0, 0, 0)
+	procsqlite3_exec.Call()
 	return
 }
 
 func sqlite3_errcode(db sqlite3) (errcode int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_errcode.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_errcode.Call(uintptr(db))
 	errcode = int(r0)
 	return
 }
 
 func sqlite3_extended_errcode(db sqlite3) (errcode int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_extended_errcode.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_extended_errcode.Call(uintptr(db))
 	errcode = int(r0)
 	return
 }
 
 func sqlite3_errmsg(db sqlite3) (msg string) {
-	r0, _, _ := syscall.Syscall(procsqlite3_errmsg.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_errmsg.Call(uintptr(db))
 	msg = UintptrToString(r0)
 	return
 }
 
 func sqlite3_errstr(err int) (errStrPtr string) {
-	r0, _, _ := syscall.Syscall(procsqlite3_errstr.Addr(), 1, uintptr(err), 0, 0)
+	r0, _, _ := procsqlite3_errstr.Call(uintptr(err))
 	errStrPtr = UintptrToString(r0)
 	return
 }
 
 func zsqlite3_open_v2() {
-	syscall.Syscall(procsqlite3_open_v2.Addr(), 0, 0, 0, 0)
+	procsqlite3_open_v2.Call()
 	return
 }
 
 func sqlite3_close_v2(db sqlite3) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_close_v2.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_close_v2.Call(uintptr(db))
 	ret = int(r0)
 	return
 }
 
 func zsqlite3_backup_init() {
-	syscall.Syscall(procsqlite3_backup_init.Addr(), 0, 0, 0, 0)
+	procsqlite3_backup_init.Call()
 	return
 }
 
 func sqlite3_backup_pagecount(b sqlite3_backup) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_backup_pagecount.Addr(), 1, uintptr(b), 0, 0)
+	r0, _, _ := procsqlite3_backup_pagecount.Call(uintptr(b))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_backup_remaining(b sqlite3_backup) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_backup_remaining.Addr(), 1, uintptr(b), 0, 0)
+	r0, _, _ := procsqlite3_backup_remaining.Call(uintptr(b))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_backup_step(b sqlite3_backup, page int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_backup_step.Addr(), 2, uintptr(b), uintptr(page), 0)
+	r0, _, _ := procsqlite3_backup_step.Call(uintptr(b), uintptr(page))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_backup_finish(b sqlite3_backup) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_backup_finish.Addr(), 1, uintptr(b), 0, 0)
+	r0, _, _ := procsqlite3_backup_finish.Call(uintptr(b))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_get_autocommit(db sqlite3) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_get_autocommit.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_get_autocommit.Call(uintptr(db))
 	ret = int(r0)
 	return
 }
 
 func zsqlite3_prepare_v2() {
-	syscall.Syscall(procsqlite3_prepare_v2.Addr(), 0, 0, 0, 0)
+	procsqlite3_prepare_v2.Call()
 	return
 }
 
 func sqlite3_limit(db sqlite3, id int, newVal int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_limit.Addr(), 3, uintptr(db), uintptr(id), uintptr(newVal))
+	r0, _, _ := procsqlite3_limit.Call(uintptr(db), uintptr(id), uintptr(newVal))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_finalize(stmt sqlite3_stmt) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_finalize.Addr(), 1, uintptr(stmt), 0, 0)
+	r0, _, _ := procsqlite3_finalize.Call(uintptr(stmt))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_bind_parameter_count(stmt sqlite3_stmt) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_bind_parameter_count.Addr(), 1, uintptr(stmt), 0, 0)
+	r0, _, _ := procsqlite3_bind_parameter_count.Call(uintptr(stmt))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_reset(stmt sqlite3_stmt) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_reset.Addr(), 1, uintptr(stmt), 0, 0)
+	r0, _, _ := procsqlite3_reset.Call(uintptr(stmt))
 	ret = int(r0)
 	return
 }
 
-func sqlite3_bind_parameter_index(stmt sqlite3_stmt, name string) (ret int, err error) {
-	var _p0 *byte
-	_p0, err = syscall.BytePtrFromString(name)
-	if err != nil {
-		return
-	}
-	return _sqlite3_bind_parameter_index(stmt, _p0)
-}
-
-func _sqlite3_bind_parameter_index(stmt sqlite3_stmt, name *byte) (ret int, err error) {
-	r0, _, e1 := syscall.Syscall(procsqlite3_bind_parameter_index.Addr(), 2, uintptr(stmt), uintptr(unsafe.Pointer(name)), 0)
-	ret = int(r0)
-	if ret == 0 {
-		if e1 != 0 {
-			err = errnoErr(e1)
-		} else {
-			err = syscall.EINVAL
-		}
-	}
+func zsqlite3_bind_parameter_index() {
+	procsqlite3_bind_parameter_index.Call()
 	return
 }
 
 func sqlite3_bind_null(stmt sqlite3_stmt, ordinal int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_bind_null.Addr(), 2, uintptr(stmt), uintptr(ordinal), 0)
+	r0, _, _ := procsqlite3_bind_null.Call(uintptr(stmt), uintptr(ordinal))
 	ret = int(r0)
 	return
 }
 
 func zsqlite3_bind_blob() {
-	syscall.Syscall(procsqlite3_bind_blob.Addr(), 0, 0, 0, 0)
+	procsqlite3_bind_blob.Call()
 	return
 }
 
 func zsqlite3_bind_text() {
-	syscall.Syscall(procsqlite3_bind_text.Addr(), 0, 0, 0, 0)
+	procsqlite3_bind_text.Call()
 	return
 }
 
-func sqlite3_bind_double(stmt sqlite3_stmt, ordinal int, val float64) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_bind_double.Addr(), 3, uintptr(stmt), uintptr(ordinal), uintptr(val))
+func sqlite3_bind_value(stmt sqlite3_stmt, ordinal int, val uintptr) (ret int) {
+	r0, _, _ := procsqlite3_bind_value.Call(uintptr(stmt), uintptr(ordinal), uintptr(val))
 	ret = int(r0)
 	return
 }
 
+func zsqlite3_bind_double() {
+	procsqlite3_bind_double.Call()
+	return
+}
+
 func sqlite3_bind_int(stmt sqlite3_stmt, ordinal int, val int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_bind_int.Addr(), 3, uintptr(stmt), uintptr(ordinal), uintptr(val))
+	r0, _, _ := procsqlite3_bind_int.Call(uintptr(stmt), uintptr(ordinal), uintptr(val))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_bind_int64(stmt sqlite3_stmt, ordinal int, val int64) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_bind_int64.Addr(), 3, uintptr(stmt), uintptr(ordinal), uintptr(val))
+	r0, _, _ := procsqlite3_bind_int64.Call(uintptr(stmt), uintptr(ordinal), uintptr(val))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_column_count(stmt sqlite3_stmt) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_count.Addr(), 1, uintptr(stmt), 0, 0)
+	r0, _, _ := procsqlite3_column_count.Call(uintptr(stmt))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_interrupt(db sqlite3) {
-	syscall.Syscall(procsqlite3_interrupt.Addr(), 1, uintptr(db), 0, 0)
+	procsqlite3_interrupt.Call(uintptr(db))
 	return
 }
 
 func sqlite3_clear_bindings(stmt sqlite3_stmt) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_clear_bindings.Addr(), 1, uintptr(stmt), 0, 0)
+	r0, _, _ := procsqlite3_clear_bindings.Call(uintptr(stmt))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_step(stmt sqlite3_stmt) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_step.Addr(), 1, uintptr(stmt), 0, 0)
+	r0, _, _ := procsqlite3_step.Call(uintptr(stmt))
 	ret = int(r0)
 	return
 }
 
-func sqlite3_db_handle(stmt sqlite3_stmt) (db *sqlite3) {
-	r0, _, _ := syscall.Syscall(procsqlite3_db_handle.Addr(), 1, uintptr(stmt), 0, 0)
-	db = (*sqlite3)(unsafe.Pointer(r0))
+func zsqlite3_db_handle() {
+	procsqlite3_db_handle.Call()
 	return
 }
 
 func sqlite3_last_insert_rowid(db sqlite3) (rowid int64) {
-	r0, _, _ := syscall.Syscall(procsqlite3_last_insert_rowid.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_last_insert_rowid.Call(uintptr(db))
 	rowid = int64(r0)
 	return
 }
 
 func sqlite3_changes(db sqlite3) (changes int64) {
-	r0, _, _ := syscall.Syscall(procsqlite3_changes.Addr(), 1, uintptr(db), 0, 0)
+	r0, _, _ := procsqlite3_changes.Call(uintptr(db))
 	changes = int64(r0)
 	return
 }
 
 func sqlite3_column_name(stmt sqlite3_stmt, idx int) (name string) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_name.Addr(), 2, uintptr(stmt), uintptr(idx), 0)
+	r0, _, _ := procsqlite3_column_name.Call(uintptr(stmt), uintptr(idx))
 	name = UintptrToString(r0)
 	return
 }
 
 func sqlite3_column_decltype(stmt sqlite3_stmt, idx int) (name string) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_decltype.Addr(), 2, uintptr(stmt), uintptr(idx), 0)
+	r0, _, _ := procsqlite3_column_decltype.Call(uintptr(stmt), uintptr(idx))
 	name = UintptrToString(r0)
 	return
 }
 
 func sqlite3_column_bytes(stmt sqlite3_stmt, idx int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_bytes.Addr(), 2, uintptr(stmt), uintptr(idx), 0)
+	r0, _, _ := procsqlite3_column_bytes.Call(uintptr(stmt), uintptr(idx))
 	ret = int(r0)
 	return
 }
 
 func zsqlite3_column_blob() {
-	syscall.Syscall(procsqlite3_column_blob.Addr(), 0, 0, 0, 0)
+	procsqlite3_column_blob.Call()
+	return
+}
+
+func sqlite3_value_dup(unprot_val uintptr) (prot_val uintptr) {
+	r0, _, _ := procsqlite3_value_dup.Call(uintptr(unprot_val))
+	prot_val = uintptr(r0)
+	return
+}
+
+func zsqlite3_column_double() {
+	procsqlite3_column_double.Call()
 	return
 }
 
 func sqlite3_column_int64(stmt sqlite3_stmt, idx int) (ret int64) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_int64.Addr(), 2, uintptr(stmt), uintptr(idx), 0)
+	r0, _, _ := procsqlite3_column_int64.Call(uintptr(stmt), uintptr(idx))
 	ret = int64(r0)
 	return
 }
 
 func zsqlite3_column_text() {
-	syscall.Syscall(procsqlite3_column_text.Addr(), 0, 0, 0, 0)
+	procsqlite3_column_text.Call()
 	return
 }
 
 func sqlite3_column_type(stmt sqlite3_stmt, idx int) (ret int) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_type.Addr(), 2, uintptr(stmt), uintptr(idx), 0)
+	r0, _, _ := procsqlite3_column_type.Call(uintptr(stmt), uintptr(idx))
 	ret = int(r0)
 	return
 }
 
 func sqlite3_column_value(stmt sqlite3_stmt, idx int) (ret uintptr) {
-	r0, _, _ := syscall.Syscall(procsqlite3_column_value.Addr(), 2, uintptr(stmt), uintptr(idx), 0)
+	r0, _, _ := procsqlite3_column_value.Call(uintptr(stmt), uintptr(idx))
 	ret = uintptr(r0)
 	return
 }
