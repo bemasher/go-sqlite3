@@ -544,9 +544,9 @@ func (f *Fn) SyscallParamList() string {
 	for _, p := range f.Params {
 		a = append(a, p.SyscallArgList()...)
 	}
-	for len(a) < f.SyscallParamCount() {
-		a = append(a, "0")
-	}
+	// for len(a) < f.SyscallParamCount() {
+	// 	a = append(a, "0")
+	// }
 	return strings.Join(a, ", ")
 }
 
@@ -899,7 +899,7 @@ func {{.HelperName}}({{.HelperParamList}}) {{template "results" .}}{
 
 {{define "results"}}{{if .Rets.List}}{{.Rets.List}} {{end}}{{end}}
 
-{{define "syscall"}}{{.Rets.SetReturnValuesCode}}{{.Syscall}}(proc{{.DLLFuncName}}.Addr(), {{.ParamCount}}, {{.SyscallParamList}}){{end}}
+{{define "syscall"}}{{.Rets.SetReturnValuesCode}}proc{{.DLLFuncName}}.Call({{.SyscallParamList}}){{end}}
 
 {{define "seterror"}}{{if .Rets.SetErrorCode}}	{{.Rets.SetErrorCode}}
 {{end}}{{end}}
