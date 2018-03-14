@@ -172,6 +172,7 @@ func (c *SQLiteConn) exec(ctx context.Context, query string, args []namedValue) 
 			for i := 0; i < na; i++ {
 				args[i].Ordinal -= start
 			}
+
 			res, err = s.(*SQLiteStmt).exec(ctx, args[:na])
 			if err != nil && err != driver.ErrSkip {
 				s.Close()
@@ -458,6 +459,11 @@ func (c *SQLiteConn) prepare(ctx context.Context, query string) (driver.Stmt, er
 	if err != nil {
 		return nil, err
 	}
+
+	if *s == 0 {
+		return &SQLiteStmt{c: c, s: nil}, nil
+	}
+
 	ss := &SQLiteStmt{c: c, s: s, t: tail}
 	runtime.SetFinalizer(ss, (*SQLiteStmt).Close)
 	return ss, nil
@@ -487,10 +493,12 @@ func (s *SQLiteStmt) Close() error {
 	if !s.c.dbConnOpen() {
 		return errors.New("sqlite statement with already closed database connection")
 	}
-	rv := sqlite3_finalize(*s.s)
-	s.s = nil
-	if rv != SQLITE_OK {
-		return s.c.lastError()
+	if s != nil && s.s != nil {
+		rv := sqlite3_finalize(*s.s)
+		s.s = nil
+		if rv != SQLITE_OK {
+			return s.c.lastError()
+		}
 	}
 	runtime.SetFinalizer(s, nil)
 	return nil
