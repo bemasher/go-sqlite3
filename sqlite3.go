@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 )
+
 import (
 	"log"
 	"unsafe"
@@ -641,8 +642,15 @@ func (s *SQLiteStmt) exec(ctx context.Context, args []namedValue) (driver.Result
 		}(s.c.db)
 	}
 
+	rv := sqlite3_step(*s.s)
+
 	var rowid, changes int64
-	rv := _sqlite3_step(*s.s, &rowid, &changes)
+	db := sqlite3_db_handle(*s.s)
+	if db != nil {
+		rowid = sqlite3_last_insert_rowid(*db)
+		changes = sqlite3_changes(*db)
+	}
+
 	if rv != SQLITE_ROW && rv != SQLITE_OK && rv != SQLITE_DONE {
 		err := lastError(s.c.db)
 		if *s.s == 0 {
