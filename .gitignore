@@ -2,3 +2,5 @@
 *.exe
 *.dll
 *.o
+sqlite3-binding.c
+sqlite3-binding.h
