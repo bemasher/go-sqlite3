@@ -12,16 +12,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-)
-
-import (
-	"log"
 	"unsafe"
 )
 
@@ -42,6 +39,12 @@ var SQLiteTimestampFormats = []string{
 	"2006-01-02T15:04",
 	"2006-01-02",
 }
+
+const (
+	columnDate      string = "date"
+	columnDatetime  string = "datetime"
+	columnTimestamp string = "timestamp"
+)
 
 func init() {
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
@@ -274,6 +277,8 @@ func errorString(err Error) string {
 //     Enable or disable enforcement of foreign keys.  X can be 1 or 0.
 //   _recursive_triggers=X
 //     Enable or disable recursive triggers.  X can be 1 or 0.
+//   _mutex=XXX
+//     Specify mutex mode. XXX can be "no", "full".
 func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	if !sqlite3_threadsafe() {
 		return nil, errors.New("sqlite library was not compiled for thread-safe operation")
@@ -284,6 +289,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	busyTimeout := 5000
 	foreignKeys := -1
 	recursiveTriggers := -1
+	mutex := SQLITE_OPEN_FULLMUTEX
 	pos := strings.IndexRune(dsn, '?')
 	if pos >= 1 {
 		params, err := url.ParseQuery(dsn[pos+1:])
@@ -350,6 +356,18 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 			}
 		}
 
+		// _mutex
+		if val := params.Get("_mutex"); val != "" {
+			switch val {
+			case "no":
+				mutex = SQLITE_OPEN_NOMUTEX
+			case "full":
+				mutex = SQLITE_OPEN_FULLMUTEX
+			default:
+				return nil, fmt.Errorf("Invalid _mutex: %v", val)
+			}
+		}
+
 		if !strings.HasPrefix(dsn, "file:") {
 			dsn = dsn[:pos]
 		}
@@ -359,7 +377,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	rv, err := sqlite3_open_v2(
 		dsn,
 		db,
-		SQLITE_OPEN_FULLMUTEX|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,
+		mutex|SQLITE_OPEN_FULLMUTEX|SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,
 		"",
 	)
 	if rv != 0 {
@@ -540,7 +558,7 @@ func (s *SQLiteStmt) bind(args []namedValue) (err error) {
 		case int64:
 			rv = sqlite3_bind_int64(*s.s, arg.Ordinal, v)
 		case bool:
-			if bool(v) {
+			if v {
 				rv = sqlite3_bind_int(*s.s, arg.Ordinal, 1)
 			} else {
 				rv = sqlite3_bind_int(*s.s, arg.Ordinal, 0)
@@ -752,7 +770,7 @@ func (rc *SQLiteRows) Next(dest []driver.Value) error {
 		case SQLITE_INTEGER:
 			val := sqlite3_column_int64(*rc.s.s, i)
 			switch rc.decltype[i] {
-			case "timestamp", "datetime", "date":
+			case columnTimestamp, columnDatetime, columnDate:
 				var t time.Time
 				// Assume a millisecond unix timestamp if it's 13 digits -- too
 				// large to be a reasonable timestamp in seconds.
@@ -784,10 +802,10 @@ func (rc *SQLiteRows) Next(dest []driver.Value) error {
 			n := sqlite3_column_bytes(*rc.s.s, i)
 			switch dest[i].(type) {
 			case sql.RawBytes:
-				dest[i] = (*[sliceLen]byte)(unsafe.Pointer(p))[:n:n]
+				dest[i] = (*[1 << 30]byte)(unsafe.Pointer(p))[0:n:n]
 			default:
 				slice := make([]byte, n)
-				copy(slice, (*[sliceLen]byte)(unsafe.Pointer(p))[:n:n])
+				copy(slice, (*[1 << 30]byte)(unsafe.Pointer(p))[0:n:n])
 				dest[i] = slice
 			}
 
@@ -800,7 +818,7 @@ func (rc *SQLiteRows) Next(dest []driver.Value) error {
 			s := sqlite3_column_text(*rc.s.s, i)
 
 			switch rc.decltype[i] {
-			case "timestamp", "datetime", "date":
+			case columnTimestamp, columnDatetime, columnDate:
 				var t time.Time
 				s = strings.TrimSuffix(s, "Z")
 				for _, format := range SQLiteTimestampFormats {
