@@ -59,7 +59,7 @@ func Version() (libVersion string, libVersionNumber int, sourceID string) {
 	return libVersion, libVersionNumber, sourceID
 }
 
-// SQLiteDriver implement sql.Driver.
+// SQLiteDriver implement driver.Driver.
 type SQLiteDriver struct {
 	Extensions  []string
 	ConnectHook func(*SQLiteConn) error
@@ -67,7 +67,7 @@ type SQLiteDriver struct {
 
 type sqlite3 uintptr
 
-// SQLiteConn implement sql.Conn.
+// SQLiteConn implement driver.Conn.
 type SQLiteConn struct {
 	mu     sync.Mutex
 	db     *sqlite3
@@ -75,12 +75,12 @@ type SQLiteConn struct {
 	txlock string
 }
 
-// SQLiteTx implemen sql.Tx.
+// SQLiteTx implemen driver.Tx.
 type SQLiteTx struct {
 	c *SQLiteConn
 }
 
-// SQLiteStmt implement sql.Stmt.
+// SQLiteStmt implement driver.Stmt.
 type SQLiteStmt struct {
 	mu     sync.Mutex
 	c      *SQLiteConn
@@ -96,7 +96,7 @@ type SQLiteResult struct {
 	changes int64
 }
 
-// SQLiteRows implement sql.Rows.
+// SQLiteRows implement driver.Rows.
 type SQLiteRows struct {
 	s        *SQLiteStmt
 	nc       int
@@ -299,9 +299,10 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 
 		// _loc
 		if val := params.Get("_loc"); val != "" {
-			if val == "auto" {
+			switch strings.ToLower(val) {
+			case "auto":
 				loc = time.Local
-			} else {
+			default:
 				loc, err = time.LoadLocation(val)
 				if err != nil {
 					return nil, fmt.Errorf("Invalid _loc: %v: %v", val, err)
@@ -320,7 +321,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 
 		// _txlock
 		if val := params.Get("_txlock"); val != "" {
-			switch val {
+			switch strings.ToLower(val) {
 			case "immediate":
 				txlock = "BEGIN IMMEDIATE"
 			case "exclusive":
@@ -358,7 +359,7 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 
 		// _mutex
 		if val := params.Get("_mutex"); val != "" {
-			switch val {
+			switch strings.ToLower(val) {
 			case "no":
 				mutex = SQLITE_OPEN_NOMUTEX
 			case "full":
@@ -566,7 +567,15 @@ func (s *SQLiteStmt) bind(args []namedValue) (err error) {
 		case float64:
 			rv = sqlite3_bind_double(*s.s, arg.Ordinal, v)
 		case []byte:
-			rv = sqlite3_bind_blob(*s.s, arg.Ordinal, v)
+			if v == nil {
+				rv = sqlite3_bind_null(*s.s, arg.Ordinal)
+			} else {
+				blobLen := len(v)
+				if blobLen == 0 {
+					v = placeHolder
+				}
+				rv = sqlite3_bind_blob(*s.s, arg.Ordinal, v, blobLen)
+			}
 		case time.Time:
 			b := v.Format(SQLiteTimestampFormats[0])
 			rv = sqlite3_bind_text(*s.s, arg.Ordinal, b)
@@ -746,11 +755,11 @@ func (rc *SQLiteRows) DeclTypes() []string {
 
 // Next move cursor to next.
 func (rc *SQLiteRows) Next(dest []driver.Value) error {
+	rc.s.mu.Lock()
+	defer rc.s.mu.Unlock()
 	if rc.s.closed {
 		return io.EOF
 	}
-	rc.s.mu.Lock()
-	defer rc.s.mu.Unlock()
 	rv := sqlite3_step(*rc.s.s)
 	if rv == SQLITE_DONE {
 		return io.EOF
@@ -801,8 +810,6 @@ func (rc *SQLiteRows) Next(dest []driver.Value) error {
 
 			n := sqlite3_column_bytes(*rc.s.s, i)
 			switch dest[i].(type) {
-			case sql.RawBytes:
-				dest[i] = (*[1 << 30]byte)(unsafe.Pointer(p))[0:n:n]
 			default:
 				slice := make([]byte, n)
 				copy(slice, (*[1 << 30]byte)(unsafe.Pointer(p))[0:n:n])

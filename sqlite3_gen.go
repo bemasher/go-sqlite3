@@ -186,17 +186,15 @@ func sqlite3_bind_parameter_index(stmt sqlite3_stmt, name string) (ret int, err 
 //sys sqlite3_bind_null(stmt sqlite3_stmt, ordinal int) (ret int) = sqlite3.sqlite3_bind_null
 
 //sys zsqlite3_bind_blob() = sqlite3.sqlite3_bind_blob
-func sqlite3_bind_blob(stmt sqlite3_stmt, ordinal int, blob []byte) (ret int) {
+func sqlite3_bind_blob(stmt sqlite3_stmt, ordinal int, blob []byte, l int) (ret int) {
 	var pBlob uintptr
-	if len(blob) > 0 {
-		pBlob = uintptr(unsafe.Pointer(&blob[0]))
-	}
+	pBlob = uintptr(unsafe.Pointer(&blob[0]))
 
 	r0, _, _ := procsqlite3_bind_blob.Call(
 		uintptr(unsafe.Pointer(stmt)),
 		uintptr(ordinal),
 		pBlob,
-		uintptr(len(blob)),
+		uintptr(l),
 		uintptr(SQLITE_TRANSIENT),
 	)
 	return int(r0)
